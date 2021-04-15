@@ -43,10 +43,11 @@ function bind(fn, context, ...args) {
   }
   
   // 加一个中间层，避免修改 fBound.prototype 的情况直接影响到 fn.prototype
-  const Noop = function () {}
-  Noop.prototype = fn.prototype
+  // const Noop = function () {}
+  // Noop.prototype = fn.prototype
 
-  fBound.prototype = new Noop()
+  // fBound.prototype = new Noop()
+  fBound.prototype = Object.create(fn.prototype)
 
   return fBound;
 }
