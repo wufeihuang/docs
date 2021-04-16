@@ -3,6 +3,9 @@
 > Promise A+ 规范： https://promisesaplus.com/
 >
 > Promise A+ 测试工具：https://github.com/promises-aplus/promises-tests
+>
+> 带测试的完整实现源码：https://github.com/wufeihuang/my-promise
+
 
 *以下英文注释都是 Promise A+ 中的规范内容。*
 
@@ -135,7 +138,9 @@ Promise.prototype.then = function(onFulfilled, onRejected) {
 ```js
 /**
  * The Promise Resolution Procedure
- * Promise 解决过程，也就是获取 promise 结果的过程
+ * Promise 处理过程
+ * 
+ * 关于 return：resolve Promise 的过程中，每个分支都是互斥且完整的，使用 return 可以更清晰地表明处理已经到这里结束。
  */
 function resolvePromise(promise, x, resolve, reject) {
   // 2.3.1 -If promise and x refer to the same object, reject promise with a TypeError as the reason.
@@ -144,14 +149,14 @@ function resolvePromise(promise, x, resolve, reject) {
     return reject(new TypeError('The promise and the returned value should not be the same'))
   }
 
-  // 2.3.1 If x is a promise, adopt its state [3.4]:
+  // 2.3.1 If x is a promise, adopt its status [3.4]:
   // - 2.3.2.1 If x is pending, promise must remain pending until x is fulfilled or rejected.
   // - 2.3.2.2 If/when x is fulfilled, fulfill promise with the same value.
   // - 2.3.2.3 If/when x is rejected, reject promise with the same reason.
   // 说白了就是调用 then
   if (x instanceof Promise) {
     // 如果 value 是个 promise，还要继续处理
-    x.then(y => {resolvePromise(promise, y, resolve, reject)}, reject)
+    return x.then(y => {resolvePromise(promise, y, resolve, reject)}, reject)
   } 
   // 2.3.3 Otherwise, if x is an object or function,
   else if ((typeof x === 'object' && x !== null) || typeof x === 'function') {
@@ -167,7 +172,7 @@ function resolvePromise(promise, x, resolve, reject) {
     }
 
     // 2.3.3.3 If then is a function, call it with x as this, first argument resolvePromise, and second argument rejectPromise, where:
-    if (typeof x.then === 'function') {
+    if (typeof then === 'function') {
       // 2.3.3.3.3 If both resolvePromise and rejectPromise are called, or multiple calls to the same argument are made, the first call takes precedence, and any further calls are ignored.
       let called = false
       try {
@@ -176,7 +181,7 @@ function resolvePromise(promise, x, resolve, reject) {
           called = true
 
           // 2.3.3.3.1 If/when resolvePromise is called with a value y, run [[Resolve]](promise, y)
-          resolvePromise(x, y, resolve, reject)
+          return resolvePromise(x, y, resolve, reject)
         }, (e) => {
           if (called) return
           called = true
@@ -184,6 +189,9 @@ function resolvePromise(promise, x, resolve, reject) {
           // 2.3.3.3.2 If/when resolvePromise is called with a value y, run [[Resolve]](promise, y)
           return reject(e)
         })
+
+        // then 可能是异步的，要及时退出
+        return
       } catch (e) {
         // 2.3.3.3.4 If calling then throws an exception e,
         //   2.3.3.3.4.1 If resolvePromise or rejectPromise have been called, ignore it.
@@ -197,10 +205,10 @@ function resolvePromise(promise, x, resolve, reject) {
     else {
       return resolve(x)
     }
+  } else {
+    // 2.3.4 If x is not an object or function, fulfill promise with x.
+    return resolve(x)
   }
-
-  // 2.3.4 If x is not an object or function, fulfill promise with x.
-  return resolve(x)
 }
 ```
 
