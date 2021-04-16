@@ -14,7 +14,7 @@
   - [原型继承 inherit](手写系列/inherit.md)
   * [防抖 debounce](手写系列/debounce.md)
   * [节流 throttle](手写系列/throttle.md)
-* [React](react/react.md)
+<!-- * [React](react/react.md) -->
 
 <!-- * [HTML](HTML.md)
 * [CSS](CSS.md)
