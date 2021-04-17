@@ -323,39 +323,46 @@ Promise.all = function(promises) {
 
 ```js
 // 始终 resolve，会等待所有的 promise 完成；返回结果元素是带状态和结果的对象，这和 all 也是不一样的。
-Promise.allSettled = function(promise) {
-  return new Promise(function(resolve, reject) {
-    const results = []
-    const length = promises.length
-    let count = 0
+Promise.allSettled = function(promises) {
+  const resolveHandler = (value) => ({status: FULFILLED, value})
+  const rejectHandler = (reason) => ({status: REJECTED, reason})
 
-    if (length === 0) {
-      return resolve(results)
-    }
+  const convertedPromises = Array.isArray(promises) ? promises.map(p => Promise.resolve(p).then(resolveHandler, rejectHandler)) : promises
 
-    promises.forEach((promise, index) => {
-      Promise.resolve(promise).then(value => {
-        count++
-        results[index] = {
-          status: FULFULLED,
-          value,
-        }
+  return Promise.all(convertedPromises)
 
-        if (count === length) {
-          resolve(results)
-        }
-      }, reason => {
-        count++
-        results[index] = {
-          status: REJECTED,
-          reason,
-        }
+  // return new Promise(function(resolve, reject) {
+  //   const results = []
+  //   const length = promises.length
+  //   let count = 0
 
-        if (count === length) {
-          resolve(results)
-        }
-      })
-    })
-  })
+  //   if (length === 0) {
+  //     return resolve(results)
+  //   }
+
+  //   promises.forEach((promise, index) => {
+  //     Promise.resolve(promise).then(value => {
+  //       count++
+  //       results[index] = {
+  //         status: FULFULLED,
+  //         value,
+  //       }
+
+  //       if (count === length) {
+  //         resolve(results)
+  //       }
+  //     }, reason => {
+  //       count++
+  //       results[index] = {
+  //         status: REJECTED,
+  //         reason,
+  //       }
+
+  //       if (count === length) {
+  //         resolve(results)
+  //       }
+  //     })
+  //   })
+  // })
 }
 ```

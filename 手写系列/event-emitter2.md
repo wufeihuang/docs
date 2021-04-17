@@ -1,11 +1,15 @@
-# EventEmitter
+# EventEmitter 增强版
 
-> 参考：[eventemitter3](https://github.com/primus/eventemitter3)
+对 [EventEmitter](手写系列/event-emitter) 进行了增强，支持事件修饰符，即支持在触发 {event} 事件时，同时能触发以 {event}.{subname} 格式命名的子事件。这在很多地方监听统同一个事件（比如页面滚动），而部分事件监听在某些情况下需要移除时十分有用（准确来说，更适用于需要批量移除同一事件下部分事件监听的场景，否则单个事件监听的移除是可以不需要修饰符的）。
 
-eventemitter3 中有很多出于性能等方面考虑而做的优化，这里的实现并不涉及。
+*好像是 jQuery 有这样的能力，但 eventemittre3 之类的库不具备。*
 
 ```js
-function EE(fn, context, once) {
+// 事件层级的分隔符，event/event.a
+const divider = '.' // * 扩展，定义分隔符
+
+function EE(event, fn, context, once) {
+  this.event = event // * 扩展，增加事件名记录，方便进行清理
   this.fn = fn
   this.context = context
   this.once = once || false
@@ -16,7 +20,7 @@ function addListener(emitter, event, fn, context, once) {
     throw new TypeError('The listener must be a function')
   }
 
-  const listener = new EE(fn, context, once)
+  const listener = new EE(event, fn, context, once) // *
 
   if (!emitter._events[event]) {
     emitter._events[event] = [listener]
@@ -28,7 +32,13 @@ function addListener(emitter, event, fn, context, once) {
 }
 
 function clearEvent(emitter, event) {
-  delete emitter._events[event]
+  // delete emitter._events[event]
+  // * 扩展：同时移除 {event} 和以 {event}. 开头的事件
+  Object.keys(emitter._events).forEach(eventName => { 
+    if (eventName === event || eventName.startsWith(event + divider)) {
+      delete emitter._events[eventName]
+    }
+  })
 }
 
 class EventEmitter {
@@ -85,13 +95,22 @@ class EventEmitter {
 
   // 触发事件
   emit(event, ...args) {
-    if (!this._events[event]) return false
+    // if (!this._events[event]) return false
 
-    const listeners = this._events[event]
+    // * 扩展：同时触发 {event} 和 以 {event}. 开头的事件
+    let listeners = []
+    Object.keys(this._events).forEach(eventName => {
+      if (event === eventName || eventName.startsWith(event + divider)) {
+        listeners = listeners.concat(this._events[eventName])
+      }
+    })
+
+    if(!listeners.length) return false
+
 
     listeners.forEach(listener => {
       if (listener.once) {
-        this.removeListener(event, listener.fn, undefined, true)
+        this.removeListener(listener.event, listener.fn, undefined, true)
       }
 
       listener.fn.apply(listener.context, args)
@@ -101,10 +120,7 @@ class EventEmitter {
   }
 }
 
-// 提供方法别名，用起来更习惯点
 EventEmitter.prototype.on = EventEmitter.prototype.addListener
 EventEmitter.prototype.off = EventEmitter.prototype.removeListener
 EventEmitter.prototype.trigger = EventEmitter.prototype.emit
 ```
-
-如果希望支持事件修饰符，可以看 [EventEmitter 增强版](手写系列/event-emitter2)。

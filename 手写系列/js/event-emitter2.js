@@ -1,11 +1,10 @@
-# EventEmitter
+// 对 event-emitter 的扩展，支持事件集合，比如触发 event 事件可以同时触发 event.a event.b 事件
 
-> 参考：[eventemitter3](https://github.com/primus/eventemitter3)
+// 事件层级的分隔符，event\event.a
+const divider = '.'
 
-eventemitter3 中有很多出于性能等方面考虑而做的优化，这里的实现并不涉及。
-
-```js
-function EE(fn, context, once) {
+function EE(event, fn, context, once) {
+  this.event = event
   this.fn = fn
   this.context = context
   this.once = once || false
@@ -16,7 +15,7 @@ function addListener(emitter, event, fn, context, once) {
     throw new TypeError('The listener must be a function')
   }
 
-  const listener = new EE(fn, context, once)
+  const listener = new EE(event, fn, context, once)
 
   if (!emitter._events[event]) {
     emitter._events[event] = [listener]
@@ -28,7 +27,13 @@ function addListener(emitter, event, fn, context, once) {
 }
 
 function clearEvent(emitter, event) {
-  delete emitter._events[event]
+  // delete emitter._events[event]
+  Object.keys(emitter._events).forEach(eventName => {
+    // 同时移除以 {event}. 开头的事件
+    if (eventName === event || eventName.startsWith(event + divider)) {
+      delete emitter._events[eventName]
+    }
+  })
 }
 
 class EventEmitter {
@@ -85,13 +90,22 @@ class EventEmitter {
 
   // 触发事件
   emit(event, ...args) {
-    if (!this._events[event]) return false
+    // if (!this._events[event]) return false
 
-    const listeners = this._events[event]
+    let listeners = []
+    Object.keys(this._events).forEach(eventName => {
+      // 同时触发 {event} 和 以 {event}. 开头的事件
+      if (event === eventName || eventName.startsWith(event + divider)) {
+        listeners = listeners.concat(this._events[eventName])
+      }
+    })
+
+    if(!listeners.length) return false
+
 
     listeners.forEach(listener => {
       if (listener.once) {
-        this.removeListener(event, listener.fn, undefined, true)
+        this.removeListener(listener.event, listener.fn, undefined, true)
       }
 
       listener.fn.apply(listener.context, args)
@@ -101,10 +115,7 @@ class EventEmitter {
   }
 }
 
-// 提供方法别名，用起来更习惯点
+
 EventEmitter.prototype.on = EventEmitter.prototype.addListener
 EventEmitter.prototype.off = EventEmitter.prototype.removeListener
 EventEmitter.prototype.trigger = EventEmitter.prototype.emit
-```
-
-如果希望支持事件修饰符，可以看 [EventEmitter 增强版](手写系列/event-emitter2)。

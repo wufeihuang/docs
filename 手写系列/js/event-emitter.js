@@ -1,10 +1,6 @@
-# EventEmitter
+// 参考：https://github.com/primus/eventemitter3/blob/master/index.js
+// eventemitter3 中有很多出于性能等方面考虑而做的优化，此处做了简化
 
-> 参考：[eventemitter3](https://github.com/primus/eventemitter3)
-
-eventemitter3 中有很多出于性能等方面考虑而做的优化，这里的实现并不涉及。
-
-```js
 function EE(fn, context, once) {
   this.fn = fn
   this.context = context
@@ -101,10 +97,7 @@ class EventEmitter {
   }
 }
 
-// 提供方法别名，用起来更习惯点
+
 EventEmitter.prototype.on = EventEmitter.prototype.addListener
 EventEmitter.prototype.off = EventEmitter.prototype.removeListener
 EventEmitter.prototype.trigger = EventEmitter.prototype.emit
-```
-
-如果希望支持事件修饰符，可以看 [EventEmitter 增强版](手写系列/event-emitter2)。
