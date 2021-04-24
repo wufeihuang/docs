@@ -37,6 +37,10 @@
   * [原型继承 inherit](手写系列/inherit.md)
   * [防抖 debounce](手写系列/debounce.md)
   * [节流 throttle](手写系列/throttle.md)
+  * [arrayToMap](手写系列/array-to-map.md)
+  * [listToTree](手写系列/list-to-tree.md)
+  * [cloneFunction](手写系列/clone-function.md)
+
 <!-- * [React](react/react.md) -->
 
 <!-- * [HTML](HTML.md)
